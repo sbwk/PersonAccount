@@ -1,0 +1,10 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "person-account",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
+
