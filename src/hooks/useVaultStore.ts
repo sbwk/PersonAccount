@@ -34,6 +34,10 @@ function newId() {
   return `id_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`;
 }
 
+function isWebCryptoUnavailable(err: unknown) {
+  return err instanceof Error && err.message === 'WEBCRYPTO_UNAVAILABLE';
+}
+
 async function persistVault(key: CryptoKey, plain: VaultPlain) {
   const cipher = await encryptJson(key, plain);
   await setVaultCipher({ id: 'vault', ...cipher, updatedAt: nowIso() });
@@ -54,20 +58,28 @@ export const useVaultStore = create<VaultState>((set, get) => ({
 
   initMaster: async (password: string) => {
     set({ error: null });
-    const kdf = createKdfParams();
-    const createdAt = nowIso();
-    await setMeta({
-      id: 'meta',
-      version: 1,
-      kdfSaltB64: kdf.saltB64,
-      kdfIterations: kdf.iterations,
-      createdAt,
-      updatedAt: createdAt,
-    });
+    try {
+      const kdf = createKdfParams();
+      const createdAt = nowIso();
+      await setMeta({
+        id: 'meta',
+        version: 1,
+        kdfSaltB64: kdf.saltB64,
+        kdfIterations: kdf.iterations,
+        createdAt,
+        updatedAt: createdAt,
+      });
 
-    const key = await deriveAesKey(password, { saltB64: kdf.saltB64, iterations: kdf.iterations });
-    await persistVault(key, { accounts: [] });
-    set({ initialized: true, status: 'unlocked', key, accounts: [], error: null });
+      const key = await deriveAesKey(password, { saltB64: kdf.saltB64, iterations: kdf.iterations });
+      await persistVault(key, { accounts: [] });
+      set({ initialized: true, status: 'unlocked', key, accounts: [], error: null });
+    } catch (err) {
+      if (isWebCryptoUnavailable(err)) {
+        set({ initialized: false, status: 'locked', key: null, accounts: [], error: 'ERR_WEBCRYPTO_UNAVAILABLE' });
+        return;
+      }
+      set({ initialized: false, status: 'locked', key: null, accounts: [], error: (err as Error)?.message ?? 'init failed' });
+    }
   },
 
   unlock: async (password: string) => {
@@ -84,7 +96,11 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const plain = await decryptJson<VaultPlain>(key, vaultCipher);
       const accounts = (plain.accounts ?? []).map((a) => ({ ...a, keys: a.keys ?? [] }));
       set({ initialized: true, status: 'unlocked', key, accounts, error: null });
-    } catch {
+    } catch (err) {
+      if (isWebCryptoUnavailable(err)) {
+        set({ status: 'locked', key: null, accounts: [], error: 'ERR_WEBCRYPTO_UNAVAILABLE' });
+        return;
+      }
       set({ status: 'locked', key: null, accounts: [], error: '主密码不正确或数据已损坏' });
     }
   },

@@ -5,6 +5,9 @@ import { createKdfParams, decryptJson, deriveAesKey, encryptJson } from '@/utils
 if (!globalThis.crypto) {
   (globalThis as unknown as { crypto: Crypto }).crypto = webcrypto as unknown as Crypto;
 }
+if (!globalThis.isSecureContext) {
+  (globalThis as unknown as { isSecureContext: boolean }).isSecureContext = true;
+}
 
 describe('crypto vault', () => {
   it('encrypt/decrypt roundtrip', async () => {
@@ -15,4 +18,3 @@ describe('crypto vault', () => {
     expect(plain).toEqual({ a: 1, b: 'x' });
   });
 });
-

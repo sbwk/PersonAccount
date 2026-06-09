@@ -38,6 +38,7 @@ export const messages = {
       tip: '建议使用长度更长的随机密码，并妥善保管。主密码遗忘后无法找回。',
       footnote: '数据仅保存在本机浏览器本地存储中，未做云同步。',
       wrongOrCorrupt: '主密码不正确或数据已损坏',
+      webCryptoUnavailable: '当前访问地址不安全，浏览器已禁用加密能力。请使用 https 访问，或在运行该项目的电脑上用 http://localhost:5173 打开。',
     },
     accounts: {
       title: '账号',
@@ -169,6 +170,7 @@ export const messages = {
       tip: 'Use a long random password and keep it safe. Master password cannot be recovered if forgotten.',
       footnote: 'Data is stored locally in your browser (IndexedDB). No cloud sync.',
       wrongOrCorrupt: 'Wrong master password or corrupted data',
+      webCryptoUnavailable: 'This origin is not secure, so encryption is unavailable. Please use https, or open http://localhost:5173 on the machine running the app.',
     },
     accounts: {
       title: 'Accounts',

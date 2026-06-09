@@ -10,13 +10,21 @@ export type VaultCipher = {
   ciphertextB64: string;
 };
 
+export function ensureWebCrypto() {
+  if (!globalThis.isSecureContext || !globalThis.crypto?.subtle) {
+    throw new Error('WEBCRYPTO_UNAVAILABLE');
+  }
+}
+
 export function randomBytes(len: number) {
+  ensureWebCrypto();
   const bytes = new Uint8Array(len);
   crypto.getRandomValues(bytes);
   return bytes;
 }
 
 export async function deriveAesKey(password: string, params: KdfParams) {
+  ensureWebCrypto();
   const salt = base64ToBytes(params.saltB64);
   const keyMaterial = await crypto.subtle.importKey('raw', utf8ToBytes(password), 'PBKDF2', false, [
     'deriveKey',
@@ -37,6 +45,7 @@ export async function deriveAesKey(password: string, params: KdfParams) {
 }
 
 export async function encryptJson(key: CryptoKey, value: unknown): Promise<VaultCipher> {
+  ensureWebCrypto();
   const nonce = randomBytes(12);
   const plaintext = utf8ToBytes(JSON.stringify(value));
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, plaintext);
@@ -47,6 +56,7 @@ export async function encryptJson(key: CryptoKey, value: unknown): Promise<Vault
 }
 
 export async function decryptJson<T>(key: CryptoKey, cipher: VaultCipher): Promise<T> {
+  ensureWebCrypto();
   const nonce = base64ToBytes(cipher.nonceB64);
   const ciphertext = base64ToBytes(cipher.ciphertextB64);
   const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce }, key, ciphertext);
@@ -79,4 +89,3 @@ export function scorePasswordStrength(pw: string) {
   const level: 'weak' | 'medium' | 'strong' = score >= 6 ? 'strong' : score >= 4 ? 'medium' : 'weak';
   return { score, level };
 }
-

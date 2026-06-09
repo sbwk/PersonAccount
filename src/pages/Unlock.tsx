@@ -135,7 +135,11 @@ export default function Unlock() {
             {pwMismatch && <div className="text-sm text-red-200">{t('unlock.mismatch')}</div>}
             {error && (
               <div className="text-sm text-red-200">
-                {error === '主密码不正确或数据已损坏' ? t('unlock.wrongOrCorrupt') : error}
+                {error === 'ERR_WEBCRYPTO_UNAVAILABLE'
+                  ? t('unlock.webCryptoUnavailable')
+                  : error === '主密码不正确或数据已损坏'
+                    ? t('unlock.wrongOrCorrupt')
+                    : error}
               </div>
             )}
 
